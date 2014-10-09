@@ -48,7 +48,6 @@ class TestCommand extends Command
 
         $this->repository = new Repository($this->repoPath);
 
-        // $this->showBranches();
         $this->showCommits('master');
     }
 
@@ -57,21 +56,31 @@ class TestCommand extends Command
         foreach ($this->repository->getReferences()->getBranches() as $branch) {
             $this->output->writeln("- ".$branch->getName());
         }
-        // $repository->run('fetch', array('--all'));
     }
 
-    private function showCommits($limit = 10, $start = 0)
+    private function showCommits($ref, $limit = 10, $start = null)
     {
-        $log = $this->repository->getLog('master', null, $start, $limit);
-        $this->output->writeln($log->countCommits(). ' commits');
-
-        // $commits = $log->getCommits();
-        // echo count($log->getRevisions());exit;
+        $log = $this->repository->getLog($ref, null, $start, $limit);
+        $commits = $log->getCommits();
         
         foreach ($commits as $commit) {
-            // $l->getRevisions()
-            // $commit = $revision->getCommit();
-            $this->output->writeln($commit->getAuthorName());
+            $this->output->writeLn('#' . $commit->getHash() . ': ' . $commit->getSubjectMessage());
+            $this->output->writeLn("Author: " . $commit->getAuthorName() . ' [' . $commit->getAuthorEmail() . '] ' .  $commit->getAuthorDate()->format('d/M/Y H:i'));
+            $this->output->writeLn("Committer: " . $commit->getCommitterName() . '  [' . $commit->getCommitterEmail() . '] ' . $commit->getCommitterDate()->format('d/M/Y H:i'));
+            $this->output->writeLn("BODY: [" . $commit->getBodyMessage() . "]");
+            
+            //$tree = $commit->getTree();
+            //print_r($tree);
+            $diff = $this->repository->getDiff($commit->getHash() . '~1..' . $commit->getHash() . '');
+            $files = $diff->getFiles();
+            foreach ($files as $fileDiff) {
+                $this->output->writeLn(
+                    " - " . $fileDiff->getNewName() .
+                    " [Additions: " . $fileDiff->getAdditions() . " Deletions: " . $fileDiff->getDeletions() . "]"
+                );
+            }
+            $this->output->writeLn("");
         }
+
     }
 }
