@@ -1,0 +1,27 @@
+{
+	"name": "linkorb/gitlog",
+    "description": "Mange change logs from the git commit messages",
+    "homepage": "https://github.com/linkorb/gitlog",
+    "keywords": ["gitlog", "changelog", "log"],
+    "type": "library",
+    "authors": [
+        {
+            "name": "Hongliang",
+            "email": "h.wang@linkorb.com",
+            "role": "Development"
+        }
+    ],
+    "require": {
+        "symfony/console": "~2.4",
+        "gitonomy/gitlib": "dev-master"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.2.*@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "GitLog\\": "src/"
+        }
+    },
+    "license": "MIT"
+}
