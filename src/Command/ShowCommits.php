@@ -7,20 +7,14 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\Command;
+// use Symfony\Component\Console\Command\Command;
 use Gitonomy\Git\Repository;
 
 /**
  *
  */
-class ShowCommits extends Command
+class ShowCommits extends Commits
 {
-    private $command;
-    private $output;
-    private $repoPath;
-    private $repository;
-    private $limit = 1;
-    private $ref = 'master';
 
     /**
      * {@inheritdoc}
@@ -31,7 +25,7 @@ class ShowCommits extends Command
 
         $this
             ->setName('gitlog:showcommits')
-            ->setDescription('Show commits')
+            ->setDescription('Show commits info')
             ->addArgument(
                 'repositorypath',
                 InputArgument::REQUIRED,
@@ -49,6 +43,18 @@ class ShowCommits extends Command
                 InputOption::VALUE_REQUIRED,
                 'Number of the commits.'
             )
+            ->addOption(
+                'start',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Index to start.'
+            )
+            ->addOption(
+                'format',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'The output format: array, JSON, or print'
+            )
         ;
     }
 
@@ -59,7 +65,6 @@ class ShowCommits extends Command
     {
         $this->output = $output;
         $this->repoPath = $input->getArgument('repositorypath');
-        // $output->writeln($this->repoPath);
         $this->repository = new Repository($this->repoPath);
 
         $limit = (int)$input->getOption('limit');
@@ -67,25 +72,39 @@ class ShowCommits extends Command
             $this->limit = $limit;
         }
 
+        $start = (int)$input->getOption('start');
+        if (!$start) {
+            $start = null;
+        }
+
         $ref = $input->getOption('ref');
         if ($ref) {
             $this->ref = $ref;
         }
-        
-        $this->showCommits();
+
+        $this->populateCommits($start);
+
+        switch (strtolower($input->getOption('format'))) {
+            case 'array':
+                print_r($this->toArray());
+                break;
+            case 'json':
+                echo $this->toJSON()."\n";
+                break;
+            default:
+                $this->write();
+                break;
+        }
     }
 
-    private function showCommits($start = null)
+    private function write()
     {
-        $log = $this->repository->getLog($this->ref, null, $start, $this->limit);
-        $commits = $log->getCommits();
-        
         $i = 0;
-        foreach ($commits as $commit) {
+        foreach ($this->getCommits() as $commit) {
             $this->output->writeLn('#' . $commit->getHash() . ': ' . $commit->getSubjectMessage());
             $this->output->writeLn("Author: " . $commit->getAuthorName() . ' [' . $commit->getAuthorEmail() . '] ' .  $commit->getAuthorDate()->format('d/M/Y H:i'));
             $this->output->writeLn("Committer: " . $commit->getCommitterName() . '  [' . $commit->getCommitterEmail() . '] ' . $commit->getCommitterDate()->format('d/M/Y H:i'));
-            $this->output->writeLn("BODY: [" . $commit->getBodyMessage() . "]");
+            $this->output->writeLn("BODY: [\n" . $commit->getBodyMessage() . "]");
             
             $diff = $this->repository->getDiff($commit->getHash() . '~1..' . $commit->getHash() . '');
             $files = $diff->getFiles();
