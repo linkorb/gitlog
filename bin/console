@@ -28,5 +28,6 @@ use Symfony\Component\Console\Application;
 
 $application = new Application('Gitlog', '0.0.1');
 $application->setCatchExceptions(true);
-$application->add(new \GitLog\Command\TestCommand());
+$application->add(new \GitLog\Command\ShowCommits());
+$application->add(new \GitLog\Command\Branches());
 $application->run();

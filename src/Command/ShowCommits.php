@@ -13,12 +13,14 @@ use Gitonomy\Git\Repository;
 /**
  *
  */
-class TestCommand extends Command
+class ShowCommits extends Command
 {
     private $command;
     private $output;
     private $repoPath;
     private $repository;
+    private $limit = 1;
+    private $ref = 'master';
 
     /**
      * {@inheritdoc}
@@ -28,11 +30,25 @@ class TestCommand extends Command
         $this->ignoreValidationErrors();
 
         $this
-            ->setName('gitlog:test')
-            ->setDefinition(array(
-                new InputArgument('repositorypath', InputArgument::REQUIRED, 'repositorypath')
-            ))
-            ->setDescription('Test command')
+            ->setName('gitlog:showcommits')
+            ->setDescription('Show commits')
+            ->addArgument(
+                'repositorypath',
+                InputArgument::REQUIRED,
+                'Repository path'
+            )
+            ->addOption(
+                'ref',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Ref'
+            )
+            ->addOption(
+                'limit',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Number of the commits.'
+            )
         ;
     }
 
@@ -41,36 +57,36 @@ class TestCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->repoPath = $input->getArgument('repositorypath');
-        
         $this->output = $output;
+        $this->repoPath = $input->getArgument('repositorypath');
         // $output->writeln($this->repoPath);
-
         $this->repository = new Repository($this->repoPath);
 
-        $this->showCommits('master');
-    }
-
-    private function showBranches()
-    {
-        foreach ($this->repository->getReferences()->getBranches() as $branch) {
-            $this->output->writeln("- ".$branch->getName());
+        $limit = (int)$input->getOption('limit');
+        if ($limit > 0) {
+            $this->limit = $limit;
         }
+
+        $ref = $input->getOption('ref');
+        if ($ref) {
+            $this->ref = $ref;
+        }
+        
+        $this->showCommits();
     }
 
-    private function showCommits($ref, $limit = 10, $start = null)
+    private function showCommits($start = null)
     {
-        $log = $this->repository->getLog($ref, null, $start, $limit);
+        $log = $this->repository->getLog($this->ref, null, $start, $this->limit);
         $commits = $log->getCommits();
         
+        $i = 0;
         foreach ($commits as $commit) {
             $this->output->writeLn('#' . $commit->getHash() . ': ' . $commit->getSubjectMessage());
             $this->output->writeLn("Author: " . $commit->getAuthorName() . ' [' . $commit->getAuthorEmail() . '] ' .  $commit->getAuthorDate()->format('d/M/Y H:i'));
             $this->output->writeLn("Committer: " . $commit->getCommitterName() . '  [' . $commit->getCommitterEmail() . '] ' . $commit->getCommitterDate()->format('d/M/Y H:i'));
             $this->output->writeLn("BODY: [" . $commit->getBodyMessage() . "]");
             
-            //$tree = $commit->getTree();
-            //print_r($tree);
             $diff = $this->repository->getDiff($commit->getHash() . '~1..' . $commit->getHash() . '');
             $files = $diff->getFiles();
             foreach ($files as $fileDiff) {
@@ -80,7 +96,8 @@ class TestCommand extends Command
                 );
             }
             $this->output->writeLn("");
+            $i++;
         }
-
+        $this->output->writeln('Displayed: '.$i.' commits in '. $this->ref. ' (Repo: '.$this->repoPath.')');
     }
 }
