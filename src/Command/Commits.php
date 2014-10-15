@@ -89,24 +89,44 @@ class Commits extends Command
         return json_encode($this->toArray());
     }
 
+    protected function toMD()
+    {
+        $path = $this->repoPath . '/gitlog';
+        if (!is_dir($path)) {
+            $this->output->writeLn(
+                '<fg=red>gitlog directory is not found.</fg=red> Please create this directory in your repo.'
+            );
+            die;
+        }
+
+        $commits = $this->toArray();
+        foreach ($commits as $commit) {
+            // $file =
+        }
+    }
+
     protected function toConsole()
     {
         $i = 0;
         foreach ($this->getCommits() as $commit) {
-            $this->output->writeLn('#<info>' . $commit->getHash() . '</info>: <comment>' . $commit->getSubjectMessage().'</comment>');
-            $this->output->writeLn("Author: <info>" . $commit->getAuthorName() . '</info> [' . $commit->getAuthorEmail() . '] <comment>' .  $commit->getAuthorDate()->format('d/M/Y H:i').'</comment>');
-            $this->output->writeLn("Committer: <info>" . $commit->getCommitterName() . '</info>  [' . $commit->getCommitterEmail() . '] <comment>' . $commit->getCommitterDate()->format('d/M/Y H:i').'</comment>');
-            $this->output->writeLn("BODY: [\n<comment>" . $commit->getBodyMessage() . "</comment>]");
+            $this->output->writeLn('#<fg=white>' . $commit->getHash() . '</fg=white>: <info>' . $commit->getSubjectMessage().'</info>');
+            $this->output->writeLn("Author: <info>" . $commit->getAuthorName() . '</info> [' . $commit->getAuthorEmail() . '] <fg=magenta>' .  $commit->getAuthorDate()->format('Y-m-d H:i').'</fg=magenta>');
+            $this->output->writeLn("Committer: <info>" . $commit->getCommitterName() . '</info>  [' . $commit->getCommitterEmail() . '] <fg=magenta>' . $commit->getCommitterDate()->format('Y-m-d H:i').'</fg=magenta>');
+            
+            $body = $commit->getBodyMessage();
+            if ($body) {
+                $this->output->writeLn("<comment>BODY: [\n" . $body . "]</comment>");
+            }
             
             $diff = $this->repository->getDiff($commit->getHash() . '~1..' . $commit->getHash() . '');
             $files = $diff->getFiles();
             foreach ($files as $fileDiff) {
                 $this->output->writeLn(
                     " - <fg=cyan>" . $fileDiff->getNewName() .
-                    "</fg=cyan> [<info>Additions: " . $fileDiff->getAdditions() . "</info> <fg=red>Deletions: " . $fileDiff->getDeletions() . "</fg=red>]"
+                    "</fg=cyan> [Additions: <info>" . $fileDiff->getAdditions() . "</info> Deletions: <fg=red>" . $fileDiff->getDeletions() . "</fg=red>]"
                 );
             }
-            $this->output->writeLn("");
+            $this->output->writeLn("\n");
             $i++;
         }
         $this->output->writeln('Displayed: '.$i.' commits in '. $this->ref. ' (Repo: '.$this->repoPath.')');
