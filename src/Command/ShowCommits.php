@@ -91,32 +91,13 @@ class ShowCommits extends Commits
             case 'json':
                 echo $this->toJSON()."\n";
                 break;
+            case 'md':
+                echo $this->toMD()."\n";
+                break;
+            case 'console':
             default:
-                $this->write();
+                $this->toConsole();
                 break;
         }
-    }
-
-    private function write()
-    {
-        $i = 0;
-        foreach ($this->getCommits() as $commit) {
-            $this->output->writeLn('#' . $commit->getHash() . ': ' . $commit->getSubjectMessage());
-            $this->output->writeLn("Author: " . $commit->getAuthorName() . ' [' . $commit->getAuthorEmail() . '] ' .  $commit->getAuthorDate()->format('d/M/Y H:i'));
-            $this->output->writeLn("Committer: " . $commit->getCommitterName() . '  [' . $commit->getCommitterEmail() . '] ' . $commit->getCommitterDate()->format('d/M/Y H:i'));
-            $this->output->writeLn("BODY: [\n" . $commit->getBodyMessage() . "]");
-            
-            $diff = $this->repository->getDiff($commit->getHash() . '~1..' . $commit->getHash() . '');
-            $files = $diff->getFiles();
-            foreach ($files as $fileDiff) {
-                $this->output->writeLn(
-                    " - " . $fileDiff->getNewName() .
-                    " [Additions: " . $fileDiff->getAdditions() . " Deletions: " . $fileDiff->getDeletions() . "]"
-                );
-            }
-            $this->output->writeLn("");
-            $i++;
-        }
-        $this->output->writeln('Displayed: '.$i.' commits in '. $this->ref. ' (Repo: '.$this->repoPath.')');
     }
 }
