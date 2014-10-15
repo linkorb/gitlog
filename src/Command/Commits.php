@@ -33,7 +33,11 @@ class Commits extends Command
 
     private function parseBody($commit)
     {
-        $body = array('original' => $commit->getBodyMessage());
+        $body = array(
+            'original' => $commit->getBodyMessage(),
+            'log' => null,
+            'meta' => array()
+        );
         $lines = explode("\n", trim($body['original'], "\n"));
         $i = 0;
         while ($i < count($lines)) {
@@ -51,10 +55,8 @@ class Commits extends Command
                     $body['message'] .= $key;
                 }
             }
-
             $i++;
         }
-
         return $body;
     }
 
@@ -101,7 +103,47 @@ class Commits extends Command
 
         $commits = $this->toArray();
         foreach ($commits as $commit) {
-            // $file =
+            if ($commit['body']['log'] === null) {
+                continue;
+            }
+            foreach ($commit['body']['log'] as $subdir) {
+                $dir = $path.'/'.$subdir;
+                if (!is_dir($dir)) {
+                    mkdir($dir);
+                }
+                
+                $file = $dir.'/'.$commit['hash'].'.md';
+                if (file_exists($file)) {
+                    $this->output->writeLn(
+                        '<comment><fg=cyan>'. $file .'</fg=cyan> - already exists.</comment>'
+                    );
+                    // die;
+                    continue;
+                }
+
+                $o = '';
+                $o .= 'Hash: '.$commit['hash']."\n";
+                $o .= 'Subject: '.$commit['subject']."\n";
+                $o .= 'Author: '.$commit['author']."\n";
+                $o .= 'E-mail: '.$commit['email']."\n";
+                $o .= 'Time: '.$commit['date']->format('Y-m-d H:i')."\n\n";
+
+                foreach ((array)$commit['meta'] as $k => $v) {
+                    $o .= $k. ': '.$v."\n";
+                }
+
+                $o .= "\n". $commit['body']['message'];
+
+                if (file_put_contents($file, $o)) {
+                    $this->output->writeLn(
+                        '<info><fg=cyan>'. $file .'</fg=cyan> - added.</info>'
+                    );
+                } else {
+                    $this->output->writeLn(
+                        '<fg=red>Failed generating MD file: "<comment>'.$file.'</comment>". Please check directory permissions.</fg=red>'
+                    );
+                }
+            }
         }
     }
 
