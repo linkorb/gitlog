@@ -7,12 +7,8 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-// use Symfony\Component\Console\Command\Command;
 use Gitonomy\Git\Repository;
 
-/**
- *
- */
 class ShowCommits extends Commits
 {
 
@@ -77,8 +73,8 @@ class ShowCommits extends Commits
             $start = null;
         }
 
-        $ref = $input->getOption('ref');
-        if ($ref) {
+        $ref = trim((string)$input->getOption('ref'));
+        if ($ref != '') {
             $this->ref = $ref;
         }
 

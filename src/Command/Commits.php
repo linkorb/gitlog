@@ -4,9 +4,6 @@ namespace GitLog\Command;
 
 use Symfony\Component\Console\Command\Command;
 
-/**
- *
- */
 class Commits extends Command
 {
     protected $command;
@@ -17,6 +14,11 @@ class Commits extends Command
     protected $ref = 'master';
     private $commits = null;
 
+    /**
+     *  Fill commits
+     * @param int|null $start Starting offset
+     * @return Commits The object itself
+     */
     protected function populateCommits($start = null)
     {
         $log = $this->repository->getLog($this->ref, null, $start, $this->limit);
@@ -26,11 +28,19 @@ class Commits extends Command
         return $this;
     }
 
+    /**
+     *  Get commits 
+     * @return The commits
+     */
     private function getCommits()
     {
         return $this->commits;
     }
 
+    /**
+     *  Parse commit message body
+     * @return array Array containing parsed commit message body
+     */
     private function parseBody($commit)
     {
         $body = array(
@@ -60,6 +70,10 @@ class Commits extends Command
         return $body;
     }
 
+    /**
+     * Get array version of the commits
+     * @return array Array of commits with parsed commit message body
+     */
     protected function toArray()
     {
         $cs = array();
@@ -86,11 +100,18 @@ class Commits extends Command
         return $cs;
     }
 
+    /**
+     * Get JSON version of the commits
+     * @return string JSON of commits with parsed commit message body
+     */
     protected function toJSON()
     {
         return json_encode($this->toArray());
     }
 
+    /**
+     * Write MD file into the target repo
+     */
     protected function toMD()
     {
         $path = $this->repoPath . '/gitlog';
@@ -147,6 +168,9 @@ class Commits extends Command
         }
     }
 
+    /**
+     * Output the commits to the CLI
+     */
     protected function toConsole()
     {
         $i = 0;
