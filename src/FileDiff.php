@@ -26,4 +26,19 @@ class FileDiff
         $this->deletions = $amount;
         return $this;
     }
+
+    public function getFileName()
+    {
+        return $this->filename;
+    }
+
+    public function getAdditions()
+    {
+        return $this->additions;
+    }
+
+    public function getDeletions()
+    {
+        return $this->deletions;
+    }
 }

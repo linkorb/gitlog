@@ -50,35 +50,6 @@ class CommitCollection
     }
 
     /**
-     * Output the commits to the CLI
-     */
-    public function toConsole(OutputInterface $output)
-    {
-        $i = 0;
-        foreach ($this->getCommits() as $commit) {
-            $output->writeLn('#<fg=white>' . $commit->getHash() . '</fg=white>: <info>' . $commit->getSubjectMessage().'</info>');
-            $output->writeLn("Author: <info>" . $commit->getAuthorName() . '</info> [' . $commit->getAuthorEmail() . '] <fg=magenta>' .  $commit->getAuthorDate()->format('Y-m-d H:i').'</fg=magenta>');
-            $output->writeLn("Committer: <info>" . $commit->getCommitterName() . '</info>  [' . $commit->getCommitterEmail() . '] <fg=magenta>' . $commit->getCommitterDate()->format('Y-m-d H:i').'</fg=magenta>');
-            
-            $body = $commit->getBodyMessage();
-            if ($body) {
-                $output->writeLn("<comment>BODY: [\n" . $body . "]</comment>");
-            }
-            
-            $diff = $this->repository->getDiff($commit->getHash() . '~1..' . $commit->getHash() . '');
-            $files = $diff->getFiles();
-            foreach ($files as $fileDiff) {
-                $output->writeLn(
-                    " - <fg=cyan>" . $fileDiff->getNewName() .
-                    "</fg=cyan> [Additions: <info>" . $fileDiff->getAdditions() . "</info> Deletions: <fg=red>" . $fileDiff->getDeletions() . "</fg=red>]"
-                );
-            }
-            $output->writeLn("\n");
-            $i++;
-        }
-        $output->writeln('Displayed: '.$i.' commits in '. $this->ref. ' (Repo: '.$this->repoPath.')');
-    }
-    /**
      *  Get commits 
      * @return The commits
      */
@@ -88,59 +59,52 @@ class CommitCollection
     }
 
     /**
-     *  Parse commit message body
-     * @return array Array containing parsed commit message body
+     * Output the commits to the CLI
      */
-    private function parseBody($commit)
+    public function toConsole(OutputInterface $output)
     {
-        $body = array(
-            'original' => $commit->getBodyMessage(),
-            'log' => null,
-            'meta' => array()
-        );
-        $lines = explode("\n", trim($body['original'], "\n"));
         $i = 0;
-        while ($i < count($lines)) {
-            list($key, $value) = explode(':', $lines[$i]);
-            if ($i == 0) {
-                if ($key == 'gitlog') {
-                    $body['log'] = explode(',', trim($value));
-                } else {
-                    return $body;
-                }
-            } else {
-                if ($value) {
-                    $body['meta'][trim($key)] = trim($value);
-                } else {
-                    $body['message'] .= $key;
-                }
+        foreach ($this->getCommits() as $commit) {
+            $output->writeLn('#<fg=white>' . $commit->getHash() . '</fg=white>: <info>' . $commit->getSubject().'</info>');
+            $output->writeLn("Author: <info>" . $commit->getAuthorName() . '</info> [' . $commit->getAuthorEmail() . '] <fg=magenta>' .  $commit->getAuthorDate()->format('Y-m-d H:i').'</fg=magenta>');
+            $output->writeLn("Committer: <info>" . $commit->getCommitterName() . '</info>  [' . $commit->getCommitterEmail() . '] <fg=magenta>' . $commit->getCommitterDate()->format('Y-m-d H:i').'</fg=magenta>');
+            
+            $body = $commit->getBody();
+            if ($body) {
+                $output->writeLn("<comment>BODY: [\n" . $body . "]</comment>");
             }
+            
+            foreach ($commit->getFileDiffs() as $fileDiff) {
+                $output->writeLn(
+                    " - <fg=cyan>" . $fileDiff->getFileName() .
+                    "</fg=cyan> [Additions: <info>" . $fileDiff->getAdditions() . "</info> Deletions: <fg=red>" . $fileDiff->getDeletions() . "</fg=red>]"
+                );
+            }
+            $output->writeLn("\n");
             $i++;
         }
-        return $body;
+        $output->writeln('Displayed: '.$i.' commits.');
     }
 
     /**
      * Get array version of the commits
      * @return array Array of commits with parsed commit message body
      */
-    protected function toArray()
+    public function toArray()
     {
         $cs = array();
         foreach ($this->commits as $commit) {
             $c = array();
             $c['hash'] = $commit->getHash();
-            $c['subject'] = $commit->getSubjectMessage();
+            $c['subject'] = $commit->getSubject();
             $c['author'] = $commit->getAuthorName();
             $c['email'] = $commit->getAuthorEmail();
             $c['date'] = $commit->getAuthorDate();
-            $c['body'] = $this->parseBody($commit);
+            $c['body'] = $commit->parseBody($commit);
 
             $c['diff'] = array();
-            $diff = $this->repository->getDiff($commit->getHash() . '~1..' . $commit->getHash() . '');
-            $files = $diff->getFiles();
-            foreach ($files as $fileDiff) {
-                $c['diff']['filename'] = $fileDiff->getNewName();
+            foreach ($commit->getFileDiffs() as $fileDiff) {
+                $c['diff']['filename'] = $fileDiff->getFileName();
                 $c['diff']['additions'] = $fileDiff->getAdditions();
                 $c['diff']['deletions'] = $fileDiff->getDeletions();
             }
@@ -154,7 +118,7 @@ class CommitCollection
      * Get JSON version of the commits
      * @return string JSON of commits with parsed commit message body
      */
-    protected function toJSON()
+    public function toJSON()
     {
         return json_encode($this->toArray());
     }
@@ -162,11 +126,10 @@ class CommitCollection
     /**
      * Write MD file into the target repo
      */
-    protected function toMD()
+    public function toMD($path, OutputInterface $output)
     {
-        $path = $this->repoPath . '/gitlog';
         if (!is_dir($path)) {
-            $this->output->writeLn(
+            $output->writeLn(
                 '<fg=red>gitlog directory is not found.</fg=red> Please create this directory in your repo.'
             );
             die;
@@ -185,10 +148,9 @@ class CommitCollection
                 
                 $file = $dir.'/'.$commit['hash'].'.md';
                 if (file_exists($file)) {
-                    $this->output->writeLn(
+                    $output->writeLn(
                         '<comment><fg=cyan>'. $file .'</fg=cyan> - already exists.</comment>'
                     );
-                    // die;
                     continue;
                 }
 
@@ -206,11 +168,11 @@ class CommitCollection
                 $o .= "\n". $commit['body']['message'];
 
                 if (file_put_contents($file, $o)) {
-                    $this->output->writeLn(
+                    $output->writeLn(
                         '<info><fg=cyan>'. $file .'</fg=cyan> - added.</info>'
                     );
                 } else {
-                    $this->output->writeLn(
+                    $output->writeLn(
                         '<fg=red>Failed generating MD file: "<comment>'.$file.'</comment>". Please check directory permissions.</fg=red>'
                     );
                 }

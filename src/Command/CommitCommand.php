@@ -13,13 +13,6 @@ use GitLog\CommitCollection;
 
 class CommitCommand extends Command
 {
-    protected $command;
-    protected $output;
-    protected $repoPath;
-    protected $repository;
-    protected $limit = 1;
-    protected $ref = 'master';
-
     /**
      * {@inheritdoc}
      */
@@ -67,27 +60,26 @@ class CommitCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->output = $output;
-        $this->repoPath = $input->getArgument('repositorypath');
-        $this->repository = new Repository($this->repoPath);
+        $path = $input->getArgument('repositorypath');
+        $repository = new Repository($path);
 
         $limit = (int)$input->getOption('limit');
-        if ($limit > 0) {
-            $this->limit = $limit;
+        if ($limit <= 0) {
+            $limit = 1;
         }
 
         $start = (int)$input->getOption('start');
         if (!$start) {
-            $start = null;
+            $start = 0;
         }
 
-        $ref = trim((string)$input->getOption('ref'));
-        if ($ref != '') {
-            $this->ref = $ref;
+        $ref = $input->getOption('ref');
+        if (!$ref) {
+            $ref = 'master';
         }
 
         $commitCollection = new CommitCollection();
-        $commitCollection->populateCommits($this->repository, $this->ref, $start, $this->limit);
+        $commitCollection->populateCommits($repository, $ref, $start, $limit);
 
         switch (strtolower($input->getOption('format'))) {
             case 'array':
@@ -97,7 +89,7 @@ class CommitCommand extends Command
                 echo $commitCollection->toJSON()."\n";
                 break;
             case 'md':
-                echo $commitCollection->toMD()."\n";
+                echo $commitCollection->toMD($path.'/gitlog', $output)."\n";
                 break;
             case 'console':
             default:

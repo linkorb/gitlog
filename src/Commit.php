@@ -17,7 +17,7 @@ class Commit
     private $body;
     private $filediffs = array();
 
-    public function _construct($hash)
+    public function __construct($hash)
     {
         $this->hash = $hash;
     }
@@ -31,6 +31,11 @@ class Commit
     {
         $this->subject = $subject;
         return $this;
+    }
+
+    public function getSubject()
+    {
+        return $this->subject;
     }
 
     public function setAuthor($name, $email, DateTimeInterface $date)
@@ -99,5 +104,42 @@ class Commit
     public function getFileDiffs()
     {
         return $this->filediffs;
+    }
+
+    /**
+     *  Parse commit message body
+     * @return array Array containing parsed commit message body
+     */
+    public function parseBody()
+    {
+        $body = array(
+            'original' => $this->getBody(),
+            'log' => null,
+            'meta' => array()
+        );
+
+        $lines = explode("\n", trim($body['original'], "\n"));
+
+        $i = 0;
+        foreach ($lines as $line) {
+            if ($line) {
+                list($key, $value) = explode(':', (string)$line);
+                if ($i == 0) {
+                    if ($key == 'gitlog') {
+                        $body['log'] = explode(',', trim($value));
+                    } else {
+                        return $body;
+                    }
+                } else {
+                    if ($value) {
+                        $body['meta'][trim($key)] = trim($value);
+                    } else {
+                        $body['message'] .= $key;
+                    }
+                }
+                $i++;
+            }
+        }
+        return $body;
     }
 }
