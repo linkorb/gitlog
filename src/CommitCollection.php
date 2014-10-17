@@ -1,33 +1,83 @@
 <?php
 
-namespace GitLog\Command;
+namespace GitLog;
 
-use Symfony\Component\Console\Command\Command;
+use Gitonomy\Git\Repository;
+use Symfony\Component\Console\Output\OutputInterface;
+use GitLog\Commit;
 
-class Commits extends Command
+class CommitCollection
 {
-    protected $command;
-    protected $output;
-    protected $repoPath;
-    protected $repository;
-    protected $limit = 1;
-    protected $ref = 'master';
+    
     private $commits = null;
 
+    public function __construct()
+    {
+    }
+
     /**
-     *  Fill commits
+     * Fill commits
      * @param int|null $start Starting offset
      * @return Commits The object itself
      */
-    protected function populateCommits($start = null)
+    public function populateCommits(Repository $repository, $ref, $start = null, $limit = 1)
     {
-        $log = $this->repository->getLog($this->ref, null, $start, $this->limit);
         if ($this->commits === null) {
-            $this->commits = $log->getCommits();
+            $this->commits = array();
+            $commits = $repository->getLog($ref, null, $start, $limit);
+            foreach ($commits as $c) {
+                $commit = new Commit(
+                    $c->getHash()
+                );
+                $commit->setSubject($c->getSubjectMessage())
+                ->setAuthor($c->getAuthorName(), $c->getAuthorEmail(), $c->getAuthorDate())
+                ->setCommitter($c->getCommitterName(), $c->getCommitterEmail(), $c->getCommitterDate())
+                ->setBody($c->getBodyMessage());
+
+                $diff = $repository->getDiff($c->getHash() . '~1..' . $c->getHash() . '');
+                $files = $diff->getFiles();
+                foreach ($files as $diff) {
+                    $newFileDiff = new FileDiff($diff->getNewName());
+                    $newFileDiff->setAdditions($diff->getAdditions());
+                    $newFileDiff->setDeletions($diff->getDeletions());
+                    $commit->addFileDiff($newFileDiff);
+                }
+
+                $this->commits[]= $commit;
+            }
         }
         return $this;
     }
 
+    /**
+     * Output the commits to the CLI
+     */
+    public function toConsole(OutputInterface $output)
+    {
+        $i = 0;
+        foreach ($this->getCommits() as $commit) {
+            $output->writeLn('#<fg=white>' . $commit->getHash() . '</fg=white>: <info>' . $commit->getSubjectMessage().'</info>');
+            $output->writeLn("Author: <info>" . $commit->getAuthorName() . '</info> [' . $commit->getAuthorEmail() . '] <fg=magenta>' .  $commit->getAuthorDate()->format('Y-m-d H:i').'</fg=magenta>');
+            $output->writeLn("Committer: <info>" . $commit->getCommitterName() . '</info>  [' . $commit->getCommitterEmail() . '] <fg=magenta>' . $commit->getCommitterDate()->format('Y-m-d H:i').'</fg=magenta>');
+            
+            $body = $commit->getBodyMessage();
+            if ($body) {
+                $output->writeLn("<comment>BODY: [\n" . $body . "]</comment>");
+            }
+            
+            $diff = $this->repository->getDiff($commit->getHash() . '~1..' . $commit->getHash() . '');
+            $files = $diff->getFiles();
+            foreach ($files as $fileDiff) {
+                $output->writeLn(
+                    " - <fg=cyan>" . $fileDiff->getNewName() .
+                    "</fg=cyan> [Additions: <info>" . $fileDiff->getAdditions() . "</info> Deletions: <fg=red>" . $fileDiff->getDeletions() . "</fg=red>]"
+                );
+            }
+            $output->writeLn("\n");
+            $i++;
+        }
+        $output->writeln('Displayed: '.$i.' commits in '. $this->ref. ' (Repo: '.$this->repoPath.')');
+    }
     /**
      *  Get commits 
      * @return The commits
@@ -166,35 +216,5 @@ class Commits extends Command
                 }
             }
         }
-    }
-
-    /**
-     * Output the commits to the CLI
-     */
-    protected function toConsole()
-    {
-        $i = 0;
-        foreach ($this->getCommits() as $commit) {
-            $this->output->writeLn('#<fg=white>' . $commit->getHash() . '</fg=white>: <info>' . $commit->getSubjectMessage().'</info>');
-            $this->output->writeLn("Author: <info>" . $commit->getAuthorName() . '</info> [' . $commit->getAuthorEmail() . '] <fg=magenta>' .  $commit->getAuthorDate()->format('Y-m-d H:i').'</fg=magenta>');
-            $this->output->writeLn("Committer: <info>" . $commit->getCommitterName() . '</info>  [' . $commit->getCommitterEmail() . '] <fg=magenta>' . $commit->getCommitterDate()->format('Y-m-d H:i').'</fg=magenta>');
-            
-            $body = $commit->getBodyMessage();
-            if ($body) {
-                $this->output->writeLn("<comment>BODY: [\n" . $body . "]</comment>");
-            }
-            
-            $diff = $this->repository->getDiff($commit->getHash() . '~1..' . $commit->getHash() . '');
-            $files = $diff->getFiles();
-            foreach ($files as $fileDiff) {
-                $this->output->writeLn(
-                    " - <fg=cyan>" . $fileDiff->getNewName() .
-                    "</fg=cyan> [Additions: <info>" . $fileDiff->getAdditions() . "</info> Deletions: <fg=red>" . $fileDiff->getDeletions() . "</fg=red>]"
-                );
-            }
-            $this->output->writeLn("\n");
-            $i++;
-        }
-        $this->output->writeln('Displayed: '.$i.' commits in '. $this->ref. ' (Repo: '.$this->repoPath.')');
     }
 }

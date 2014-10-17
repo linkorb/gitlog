@@ -7,10 +7,18 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Command\Command;
 use Gitonomy\Git\Repository;
+use GitLog\CommitCollection;
 
-class ShowCommits extends Commits
+class CommitCommand extends Command
 {
+    protected $command;
+    protected $output;
+    protected $repoPath;
+    protected $repository;
+    protected $limit = 1;
+    protected $ref = 'master';
 
     /**
      * {@inheritdoc}
@@ -20,7 +28,7 @@ class ShowCommits extends Commits
         $this->ignoreValidationErrors();
 
         $this
-            ->setName('gitlog:showcommits')
+            ->setName('gitlog:commit')
             ->setDescription('Show commits info')
             ->addArgument(
                 'repositorypath',
@@ -78,21 +86,22 @@ class ShowCommits extends Commits
             $this->ref = $ref;
         }
 
-        $this->populateCommits($start);
+        $commitCollection = new CommitCollection();
+        $commitCollection->populateCommits($this->repository, $this->ref, $start, $this->limit);
 
         switch (strtolower($input->getOption('format'))) {
             case 'array':
-                print_r($this->toArray());
+                print_r($commitCollection->toArray());
                 break;
             case 'json':
-                echo $this->toJSON()."\n";
+                echo $commitCollection->toJSON()."\n";
                 break;
             case 'md':
-                echo $this->toMD()."\n";
+                echo $commitCollection->toMD()."\n";
                 break;
             case 'console':
             default:
-                $this->toConsole();
+                $commitCollection->toConsole($output);
                 break;
         }
     }

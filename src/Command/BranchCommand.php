@@ -13,7 +13,7 @@ use Gitonomy\Git\Repository;
 /**
  *
  */
-class Branches extends Command
+class BranchCommand extends Command
 {
     private $command;
     private $output;
@@ -28,7 +28,7 @@ class Branches extends Command
     {
         $this->ignoreValidationErrors();
         $this
-            ->setName('gitlog:branches')
+            ->setName('gitlog:branch')
             ->setDescription('Show branches')
             ->addArgument(
                 'repositorypath',

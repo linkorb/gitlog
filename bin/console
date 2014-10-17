@@ -28,6 +28,6 @@ use Symfony\Component\Console\Application;
 
 $application = new Application('Gitlog', '0.0.1');
 $application->setCatchExceptions(true);
-$application->add(new \GitLog\Command\ShowCommits());
-$application->add(new \GitLog\Command\Branches());
+$application->add(new \GitLog\Command\CommitCommand());
+$application->add(new \GitLog\Command\BranchCommand());
 $application->run();
