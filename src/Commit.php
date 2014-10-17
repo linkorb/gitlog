@@ -17,6 +17,11 @@ class Commit
     private $body;
     private $filediffs = array();
 
+    private $parsed = false;
+    private $cleanmessage = null;
+    private $logs = array();
+    private $meta = array();
+
     public function __construct($hash)
     {
         $this->hash = $hash;
@@ -106,40 +111,54 @@ class Commit
         return $this->filediffs;
     }
 
+    public function getLogs()
+    {
+        return $this->logs;
+    }
+
+    public function getMeta()
+    {
+        return $this->meta;
+    }
+
+    public function getCleanMessage()
+    {
+        return $this->cleanmessage;
+    }
+
     /**
      *  Parse commit message body
      * @return array Array containing parsed commit message body
      */
     public function parseBody()
     {
-        $body = array(
-            'original' => $this->getBody(),
-            'log' => null,
-            'meta' => array()
-        );
+        if ($this->parsed) {
+            return $this;
+        }
 
-        $lines = explode("\n", trim($body['original'], "\n"));
+        $lines = explode("\n", trim($this->getBody(), "\n"));
 
         $i = 0;
         foreach ($lines as $line) {
             if ($line) {
-                list($key, $value) = explode(':', (string)$line);
+                list($key, $value) = explode(':', $line);
                 if ($i == 0) {
                     if ($key == 'gitlog') {
-                        $body['log'] = explode(',', trim($value));
+                        $this->logs = explode(',', trim($value));
                     } else {
-                        return $body;
+                        return $this;
                     }
                 } else {
                     if ($value) {
-                        $body['meta'][trim($key)] = trim($value);
+                        $this->meta[trim($key)] = trim($value);
                     } else {
-                        $body['message'] .= $key;
+                        $this->cleanmessage = $key;
                     }
                 }
                 $i++;
             }
         }
-        return $body;
+        $this->parsed = true;
+        return $this;
     }
 }

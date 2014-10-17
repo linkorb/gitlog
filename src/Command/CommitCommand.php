@@ -10,6 +10,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Command\Command;
 use Gitonomy\Git\Repository;
 use GitLog\CommitCollection;
+use GitLog\Formatter\ArrayFormatter;
+use GitLog\Formatter\ConsoleFormatter;
+use GitLog\Formatter\MDFormatter;
 
 class CommitCommand extends Command
 {
@@ -83,17 +86,28 @@ class CommitCommand extends Command
 
         switch (strtolower($input->getOption('format'))) {
             case 'array':
-                print_r($commitCollection->toArray());
+                $formatter = new ArrayFormatter();
+                print_r($formatter->formatCommitCollection($commitCollection));
                 break;
             case 'json':
-                echo $commitCollection->toJSON()."\n";
+                $formatter = new ArrayFormatter();
+                echo json_encode($formatter->formatCommitCollection($commitCollection))."\n";
                 break;
             case 'md':
-                echo $commitCollection->toMD($path.'/gitlog', $output)."\n";
+                $dir = $path . '/gitlog';
+                if (!is_dir($dir)) {
+                    $output->writeLn(
+                        '<fg=red>gitlog directory is not found.</fg=red> Please create this directory in your repo.'
+                    );
+                    die;
+                }
+                $formatter = new MDFormatter($dir, $output);
+                $formatter->formatCommitCollection($commitCollection);
                 break;
             case 'console':
             default:
-                $commitCollection->toConsole($output);
+                $formatter = new ConsoleFormatter($output);
+                $formatter->formatCommitCollection($commitCollection);
                 break;
         }
     }
