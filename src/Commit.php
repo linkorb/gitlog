@@ -41,6 +41,21 @@ class Commit
         return $this;
     }
 
+    public function getAuthorName()
+    {
+        return $this->authorName;
+    }
+
+    public function getAuthorEmail()
+    {
+        return $this->authorEmail;
+    }
+
+    public function getAuthorDate()
+    {
+        return $this->authorDate;
+    }
+
     public function setCommitter($name, $email, DateTimeInterface $date)
     {
         $this->committerName = $name;
@@ -48,11 +63,32 @@ class Commit
         $this->committerDate = $date;
         return $this;
     }
+    
+    public function getCommitterName()
+    {
+        return $this->committerName;
+    }
+    
+    public function getCommitterEmail()
+    {
+        return $this->committerEmail;
+    }
+    
+    public function getCommitterDate()
+    {
+        return $this->committerDate;
+    }
+
 
     public function setBody($body)
     {
         $this->body = $body;
         return $this;
+    }
+    
+    public function getBody()
+    {
+        return $this->body;
     }
 
     public function addFileDiff(FileDiff $filediff)
