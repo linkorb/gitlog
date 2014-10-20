@@ -141,7 +141,11 @@ class Commit
         $i = 0;
         foreach ($lines as $line) {
             if ($line) {
-                list($key, $value) = explode(':', $line);
+                // list($key, $value) = explode(':', $line);
+                $lineInfo = explode(':', $line);
+                $key = $lineInfo[0];
+                $value = (count($lineInfo) > 1) ? $lineInfo[1] : null;
+
                 if ($i == 0) {
                     if ($key == 'gitlog') {
                         $this->logs = explode(',', trim($value));
