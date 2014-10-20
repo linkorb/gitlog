@@ -13,7 +13,7 @@ class MDFormatter implements FormatterInterface
     private $br = "\n";
     private $output;
 
-    public function __construct($basedir, OutputInterface $output)
+    public function __construct(OutputInterface $output, $basedir)
     {
         if (!$basedir) {
             throw new InvalidArgumentException('Please pass base dir');

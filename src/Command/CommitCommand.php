@@ -63,6 +63,41 @@ class CommitCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $params = $this->parseParameters($input);
+
+        $commitCollection = new CommitCollection();
+        $commitCollection->populateCommits($params['repository'], $params['ref'], $params['start'], $params['limit']);
+
+        switch (strtolower($input->getOption('format'))) {
+            case 'array':
+                $formatter = new ArrayFormatter();
+                print_r($formatter->formatCommitCollection($commitCollection));
+                break;
+            case 'json':
+                $formatter = new ArrayFormatter();
+                echo json_encode($formatter->formatCommitCollection($commitCollection))."\n";
+                break;
+            case 'md':
+                $dir = $params['path'] . '/gitlog';
+                if (!is_dir($dir)) {
+                    $output->writeLn(
+                        '<fg=red>gitlog directory is not found.</fg=red> Please create this directory in your repo.'
+                    );
+                    die;
+                }
+                $formatter = new MDFormatter($output, $dir);
+                $formatter->formatCommitCollection($commitCollection);
+                break;
+            case 'console':
+            default:
+                $formatter = new ConsoleFormatter($output);
+                $formatter->formatCommitCollection($commitCollection);
+                break;
+        }
+    }
+
+    private function parseParameters(InputInterface $input)
+    {
         $path = $input->getArgument('repositorypath');
         $repository = new Repository($path);
 
@@ -81,34 +116,6 @@ class CommitCommand extends Command
             $ref = 'master';
         }
 
-        $commitCollection = new CommitCollection();
-        $commitCollection->populateCommits($repository, $ref, $start, $limit);
-
-        switch (strtolower($input->getOption('format'))) {
-            case 'array':
-                $formatter = new ArrayFormatter();
-                print_r($formatter->formatCommitCollection($commitCollection));
-                break;
-            case 'json':
-                $formatter = new ArrayFormatter();
-                echo json_encode($formatter->formatCommitCollection($commitCollection))."\n";
-                break;
-            case 'md':
-                $dir = $path . '/gitlog';
-                if (!is_dir($dir)) {
-                    $output->writeLn(
-                        '<fg=red>gitlog directory is not found.</fg=red> Please create this directory in your repo.'
-                    );
-                    die;
-                }
-                $formatter = new MDFormatter($dir, $output);
-                $formatter->formatCommitCollection($commitCollection);
-                break;
-            case 'console':
-            default:
-                $formatter = new ConsoleFormatter($output);
-                $formatter->formatCommitCollection($commitCollection);
-                break;
-        }
+        return array('path' => $path, 'repository' => $repository, 'limit' => $limit, 'start' => $start, 'ref' => $ref);
     }
 }
