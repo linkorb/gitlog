@@ -69,22 +69,31 @@ class BranchCommand extends Command
             switch ($this->type) {
                 case 'local':
                     if ($branch->isLocal()) {
-                        $this->output->writeln('- '.$branch->getName());
+                        $this->outputBranch($branch);
                         $i++;
                     }
                     break;
                 case 'remote':
                     if ($branch->isRemote()) {
-                        $this->output->writeln('- '.$branch->getName());
+                        $this->outputBranch($branch);
                         $i++;
                     }
                     break;
                 default:
-                    $this->output->writeln('- '.$branch->getName());
+                    $this->outputBranch($branch);
                     $i++;
                     break;
             }
         }
-        $this->output->writeln('Total '.$i.' '.$this->type.' branches.');
+        $this->output->writeln('Total <info>'.$i.'</info> '.$this->type.' branches.');
+    }
+
+    private function outputBranch($branch)
+    {
+        if ($branch->isRemote()) {
+            $this->output->writeln('- <fg=red>'.$branch->getName().'</fg=red>');
+        } else {
+            $this->output->writeln('- '.$branch->getName());
+        }
     }
 }

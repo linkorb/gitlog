@@ -140,29 +140,36 @@ class Commit
 
         $i = 0;
         foreach ($lines as $line) {
-            if ($line) {
-                // list($key, $value) = explode(':', $line);
-                $lineInfo = explode(':', $line);
-                $key = $lineInfo[0];
-                $value = (count($lineInfo) > 1) ? $lineInfo[1] : null;
-
-                if ($i == 0) {
-                    if ($key == 'gitlog') {
-                        $this->logs = explode(',', trim($value));
-                    } else {
-                        return $this;
-                    }
-                } else {
-                    if ($value) {
-                        $this->meta[trim($key)] = trim($value);
-                    } else {
-                        $this->cleanmessage = $key;
-                    }
-                }
-                $i++;
+            if ($this->parseBodyLine($line, $i) === false) {
+                $this->parsed = true;
+                return $this;
             }
+            $i++;
         }
+
         $this->parsed = true;
         return $this;
+    }
+
+    private function parseBodyLine($line, $index)
+    {
+        $lineInfo = explode(':', $line);
+        $key = $lineInfo[0];
+        $value = (count($lineInfo) > 1) ? $lineInfo[1] : null;
+
+        if ($index == 0) {
+            if ($key == 'gitlog') {
+                $this->logs = explode(',', trim($value));
+            } else {
+                return false;
+            }
+        } else {
+            if ($value) {
+                $this->meta[trim($key)] = trim($value);
+            } else {
+                $this->cleanmessage = $key;
+            }
+        }
+        return true;
     }
 }
