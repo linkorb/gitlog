@@ -10,6 +10,7 @@ class MDFormatter implements FormatterInterface
 {
     private $basedir;
     private $br = "\n";
+    private $output;
 
     public function __construct($basedir, OutputInterface $output)
     {
