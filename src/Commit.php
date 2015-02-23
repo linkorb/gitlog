@@ -158,18 +158,43 @@ class Commit
         $value = (count($lineInfo) > 1) ? $lineInfo[1] : null;
 
         if ($index == 0) {
+            /*
             if ($key == 'gitlog') {
                 $this->logs = explode(',', trim($value));
             } else {
                 return false;
             }
+            */
+            if ($this->parseBodyLineMeta($key, $value) === false) {
+                return false;
+            }
         } else {
+            /*
             if ($value) {
                 $this->meta[trim($key)] = trim($value);
             } else {
                 $this->cleanmessage = $key;
             }
+            */
+            $this->parseBodyLineMessage($key, $value);
         }
         return true;
+    }
+
+    private function parseBodyLineMeta($key, $value)
+    {
+        if ($key == 'gitlog') {
+            $this->logs = explode(',', trim($value));
+        } else {
+            return false;
+        }
+    }
+    private function parseBodyLineMessage($key, $value)
+    {
+        if ($value) {
+            $this->meta[trim($key)] = trim($value);
+        } else {
+            $this->cleanmessage = $key;
+        }
     }
 }

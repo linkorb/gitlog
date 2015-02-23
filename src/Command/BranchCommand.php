@@ -66,26 +66,31 @@ class BranchCommand extends Command
         $branches = $this->getBranches();
         $i = 0;
         foreach ($branches as $branch) {
-            switch ($this->type) {
-                case 'local':
-                    if ($branch->isLocal()) {
-                        $this->outputBranch($branch);
-                        $i++;
-                    }
-                    break;
-                case 'remote':
-                    if ($branch->isRemote()) {
-                        $this->outputBranch($branch);
-                        $i++;
-                    }
-                    break;
-                default:
-                    $this->outputBranch($branch);
-                    $i++;
-                    break;
-            }
+            $this->showBranch($branch, $i);
         }
         $this->output->writeln('Total <info>'.$i.'</info> '.$this->type.' branches.');
+    }
+
+    private function showBranch($branch, &$i)
+    {
+        switch ($this->type) {
+            case 'local':
+                if ($branch->isLocal()) {
+                    $this->outputBranch($branch);
+                    $i++;
+                }
+                break;
+            case 'remote':
+                if ($branch->isRemote()) {
+                    $this->outputBranch($branch);
+                    $i++;
+                }
+                break;
+            default:
+                $this->outputBranch($branch);
+                $i++;
+                break;
+        }
     }
 
     private function outputBranch($branch)

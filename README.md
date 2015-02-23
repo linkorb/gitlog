@@ -22,7 +22,7 @@ Shows or exports the logs. The command supports the following parameters:
 
 For gitlog to extract useful information out of the commit messages, the commit message needs to follow a set of simple rules:
 * Starting from the 3rd line of the commit message body with keyword: "gitlog" to trigger gitlog to find information.
-* On the 4rd line state the type or category of the commit, e.g. dev, production-cn. The types/categories can be delimited with comma ",".
+* On the 4rd line state the type or category of the commit, e.g. dev, production-cn. The types/categories can be delimited with comma ",". Each type/category will have its own directory when exporting to md format. The commit information will be duplicated into every type/category.
 * Starting from the 4th line to write the information. Here is an exmaple of commit message.
 
 ```
