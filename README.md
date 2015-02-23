@@ -23,9 +23,11 @@ Shows or exports the logs. The command supports the following parameters:
 For gitlog to extract useful information out of the commit messages, the commit message needs to follow a set of simple rules:
 * Starting from the 3rd line of the commit message body with keyword: "gitlog" to trigger gitlog to find information.
 * On the 4rd line state the type or category of the commit, e.g. dev, production-cn. The types/categories can be delimited with comma ",".
-* Starting from the 4th line to write the information.
+* Starting from the 4th line to write the information. Here is an exmaple of commit message.
 
-	A test commit message body.
+```
+A test commit message body.
 
-	gitlog: dev,calendar-bundle-en
-	The calendar now supports customizing color on group calendars.
+gitlog: dev,calendar-bundle-en
+The calendar now supports customizing color on group calendars.
+```
