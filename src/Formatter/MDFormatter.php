@@ -36,7 +36,6 @@ class MDFormatter implements FormatterInterface
     private function commitToMD(Commit $commit)
     {
         foreach ($commit->getLogs() as $subdir) {
-            
             $dir = $this->ensureLogDir($subdir);
 
             $file = $dir. '/' .$commit->getHash().'.md';

@@ -73,17 +73,17 @@ class Commit
         $this->committerDate = $date;
         return $this;
     }
-    
+
     public function getCommitterName()
     {
         return $this->committerName;
     }
-    
+
     public function getCommitterEmail()
     {
         return $this->committerEmail;
     }
-    
+
     public function getCommitterDate()
     {
         return $this->committerDate;
@@ -95,7 +95,7 @@ class Commit
         $this->body = $body;
         return $this;
     }
-    
+
     public function getBody()
     {
         return $this->body;

@@ -45,7 +45,7 @@ class CommitCollection
     }
 
     /**
-     * Get commits 
+     * Get commits
      * @return The commits
      */
     public function getCommits()
